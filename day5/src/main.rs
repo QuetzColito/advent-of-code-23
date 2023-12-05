@@ -13,8 +13,8 @@ fn main() {
     let start_time = Instant::now();
     let input = include_str!("input.txt");
     let test = include_str!("test.txt");
-    println!("{}", part2(test));
-    println!("{}", part2(input));
+    // println!("{}", part2_stupid(test));
+    println!("{}", part2_stupid(input));
 
     let end_time = Instant::now();
     println!("{:?}", end_time - start_time);
@@ -176,5 +176,67 @@ fn apply_shifts(range: (u64, u64), shifts: &[(u64, u64, u64)]) -> Vec<(u64, u64)
         result
     } else {
         apply_shifts(range, &shifts[1..])
+    }
+}
+
+fn part2_stupid(input: &str) -> u64 {
+    let mut lines = input.lines();
+    let seeds: Vec<u64> = lines.next().unwrap()[6..]
+        .split_whitespace()
+        .map(|x| x.parse().unwrap())
+        .collect::<Vec<u64>>()
+        .chunks(2)
+        .flat_map(|range| (range[0]..range[0] + range[1]))
+        .collect();
+
+    let mut maps: HashMap<&str, &str> = HashMap::new();
+    let mut mappings: HashMap<&str, Vec<(u64, u64, u64)>> = HashMap::new();
+    let mut current_map: (&str, &str) = ("", "");
+    lines.for_each(|line| {
+        if line.contains("map") {
+            let mut new_map = line.split_once(' ').unwrap().0.split('-');
+            current_map.1 = new_map.next().unwrap();
+            current_map.0 = new_map.last().unwrap();
+            maps.insert(current_map.0, current_map.1);
+        };
+        if line.contains(|x: char| x.is_digit(10)) {
+            let mut line_iter = line.split_whitespace().map(|x| x.parse().unwrap());
+            let new_mapping = (
+                line_iter.next().unwrap(),
+                line_iter.next().unwrap(),
+                line_iter.next().unwrap(),
+            );
+            mappings
+                .entry(current_map.1)
+                .or_insert(vec![])
+                .push(new_mapping);
+        };
+    });
+
+    let mut location = 100000;
+    loop {
+        let mut seed = location;
+        let mut category = "location";
+        while category != "seed" {
+            let next_category = maps.get(category).unwrap();
+            // dbg!(next_category);
+            for (destination_start, source_start, range) in mappings.get(next_category).unwrap() {
+                // dbg!((destination_start, source_start, range));
+                // dbg!(seed);
+                if seed >= *destination_start && seed < *destination_start + *range {
+                    seed = seed + *source_start - *destination_start;
+                    break;
+                }
+            }
+            category = next_category;
+        }
+        // dbg!(seed);
+        // dbg!(seeds.clone());
+        // dbg!(location);
+
+        if seeds.contains(&seed) {
+            break location;
+        }
+        location += 1;
     }
 }
