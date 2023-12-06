@@ -101,33 +101,45 @@ fn part2(input: &str) -> u64 {
                 .filter_map(|line| line.parse().ok())
                 .collect();
 
-            let d0 = shift[0];
-            let s0 = shift[1];
-            let s1 = shift[2];
-
-            // dbg!(shift);
+            let destination = shift[0];
+            let source = shift[1];
+            let map_range = shift[2];
+            let source_end = source + map_range;
 
             let mut new_seeds = vec![];
 
-            seeds.iter().for_each(|(r0, r1)| {
-                if *r0 >= s0 && *r0 + *r1 <= s0 + s1 {
-                    shifted_seeds.push((*r0 - s0 + d0, *r1));
-                } else if *r0 < s0 && r0 + r1 > s0 + s1 {
-                    new_seeds.push((*r0, s0 - *r0));
-                    new_seeds.push((s0 + s1, *r0 + *r1 - (s0 + s1)));
-                    shifted_seeds.push((d0, s1))
-                } else if *r0 + *r1 > s0 && *r0 + *r1 <= s0 + s1 && *r0 < s0 {
-                    new_seeds.push((*r0, s0 - *r0));
-                    shifted_seeds.push((d0, *r0 + *r1 - s0));
-                } else if *r0 < s0 + s1 && *r0 >= s0 && *r0 + *r1 > s0 + s1 {
-                    new_seeds.push((s0 + s1, *r0 + *r1 - (s0 + s1)));
-                    shifted_seeds.push((*r0 - s0 + d0, s0 + s1 - *r0));
+            seeds.iter().for_each(|(range_start, range)| {
+                let range_start = *range_start;
+                let range = *range;
+                let range_end = range_start + range;
+                // Source        |----------|
+                // Range           |------|
+                if range_start >= source && range_end <= source_end {
+                    shifted_seeds.push((range_start - source + destination, range));
+                // Source        |----------|
+                // Range      |----------------|
+                } else if range_start < source && range_end > source_end {
+                    new_seeds.push((range_start, source - range_start));
+                    new_seeds.push((source_end, range_end - (source_end)));
+                    shifted_seeds.push((destination, map_range))
+                // Source        |----------|
+                // Range             |----------|
+                } else if range_end > source && range_end <= source_end && range_start < source {
+                    new_seeds.push((range_start, source - range_start));
+                    shifted_seeds.push((destination, range_end - source));
+                // Source        |----------|
+                // Range    |---------|
+                } else if range_start < source_end
+                    && range_start >= source
+                    && range_end > source_end
+                {
+                    new_seeds.push((source_end, range_end - (source_end)));
+                    shifted_seeds
+                        .push((range_start - source + destination, source_end - range_start));
                 } else {
-                    new_seeds.push((*r0, *r1));
+                    new_seeds.push((range_start, range));
                 }
             });
-            // dbg!(new_seeds.clone());
-            // dbg!(shifted_seeds.clone());
             seeds = new_seeds;
         }
     });
