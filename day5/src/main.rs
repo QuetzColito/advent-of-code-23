@@ -13,8 +13,8 @@ fn main() {
     let start_time = Instant::now();
     let input = include_str!("input.txt");
     let test = include_str!("test.txt");
-    // println!("{}", part2_stupid(test));
-    println!("{}", part2_stupid(input));
+    println!("{}", part2(test));
+    println!("{}", part2(input));
 
     let end_time = Instant::now();
     println!("{:?}", end_time - start_time);
@@ -81,7 +81,7 @@ fn part2(input: &str) -> u64 {
         .map(|x| x.parse().unwrap())
         .collect::<Vec<u64>>()
         .chunks(2)
-        .map(|range| (range[0], range[1]))
+        .map(|range| (range[0], range[0] + range[1]))
         .collect();
     let mut maps: HashMap<&str, &str> = HashMap::new();
     let mut mappings: HashMap<&str, Vec<(u64, u64, u64)>> = HashMap::new();
@@ -120,6 +120,7 @@ fn part2(input: &str) -> u64 {
                         apply_shifts(range, mappings.get(next_category).unwrap().as_slice())
                     })
                     .collect();
+                // dbg!(new_seeds.clone());
                 category = next_category;
             }
             new_seeds
@@ -134,48 +135,60 @@ fn apply_shifts(range: (u64, u64), shifts: &[(u64, u64, u64)]) -> Vec<(u64, u64)
     if shifts.len() == 0 {
         return vec![range];
     }
+    // dbg!(range);
 
     let (destination_start, source_start, map_range) = shifts[0];
+
     let source_end = source_start + map_range;
-    let range_end = range.0 + range.1;
-    if range.0 >= source_start && range_end <= source_end {
+    let destination_end = destination_start + map_range;
+    // dbg!((source_start, source_end));
+    // dbg!((destination_start, destination_end));
+
+    // Range        |------|e
+    // Source     |----------|e
+    if range.0 >= source_start && range.1 <= source_end {
         apply_shifts(
-            (range.0 + destination_start - source_start, range.1),
+            (
+                range.0 + destination_start - source_start,
+                range.1 + destination_start - source_start,
+            ),
             &shifts[1..],
         )
-    } else if range.0 < source_start && range_end > source_end {
-        let mut result = vec![(source_start + destination_start - source_start, map_range)];
-        result.extend(apply_shifts(
-            (range.0, source_start - range.0),
-            &shifts[1..],
-        ));
-        result.extend(apply_shifts(
-            (source_end, range_end - source_end),
-            &shifts[1..],
-        ));
+    // Range        |------|e
+    // Source        |----|e
+    } else if range.0 < source_start && range.1 > source_end {
+        let mut result = vec![(destination_start, destination_end)];
+        result.extend(apply_shifts((range.0, source_start), &shifts[1..]));
+        result.extend(apply_shifts((source_end, range.1), &shifts[1..]));
         result
-    } else if range.0 < source_start && range_end <= source_end && range_end > source_start {
+    // Range        |------|e
+    // Source         |-------|e
+    } else if range.0 < source_start && range.1 <= source_end && range.1 > source_start {
         let mut result = vec![(
             source_start + destination_start - source_start,
-            range_end - source_start,
+            range.1 + destination_start - source_start,
         )];
-        result.extend(apply_shifts(
-            (range.0, source_start - range.0),
-            &shifts[1..],
-        ));
+        result.extend(apply_shifts((range.0, source_start), &shifts[1..]));
         result
-    } else if range.0 >= source_start && range_end > source_end && range.0 < source_end {
+    // Range        |------|e
+    // Source     |-----|e
+    } else if range.0 >= source_start && range.1 > source_end && range.0 < source_end {
         let mut result = vec![(
             range.0 + destination_start - source_start,
-            source_end - range.0,
+            destination_start + map_range,
         )];
-        result.extend(apply_shifts(
-            (source_end, range_end - source_end),
-            &shifts[1..],
-        ));
+        result.extend(apply_shifts((source_end, range.1), &shifts[1..]));
         result
-    } else {
+    // Range                   |------|e
+    // Source     |----------|e
+    // OR
+    // Range        |------|e
+    // Source                  |----------|e
+    } else if range.0 >= source_end || range.1 <= source_start {
         apply_shifts(range, &shifts[1..])
+    // all other cases should handle all possibilities
+    } else {
+        panic!("How did we get here?")
     }
 }
 
