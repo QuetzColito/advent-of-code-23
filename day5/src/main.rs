@@ -76,180 +76,61 @@ fn part1(input: &str) -> u64 {
 
 fn part2(input: &str) -> u64 {
     let mut lines = input.lines();
-    let seeds: Vec<(u64, u64)> = lines.next().unwrap()[6..]
-        .split_whitespace()
-        .map(|x| x.parse().unwrap())
-        .collect::<Vec<u64>>()
-        .chunks(2)
-        .map(|range| (range[0], range[0] + range[1]))
-        .collect();
-    let mut maps: HashMap<&str, &str> = HashMap::new();
-    let mut mappings: HashMap<&str, Vec<(u64, u64, u64)>> = HashMap::new();
-    let mut current_map: (&str, &str) = ("", "");
-    lines.for_each(|line| {
-        if line.contains("map") {
-            let mut new_map = line.split_once(' ').unwrap().0.split('-');
-            current_map.0 = new_map.next().unwrap();
-            current_map.1 = new_map.last().unwrap();
-            maps.insert(current_map.0, current_map.1);
-        };
-        if line.contains(|x: char| x.is_digit(10)) {
-            let mut line_iter = line.split_whitespace().map(|x| x.parse().unwrap());
-            let new_mapping = (
-                line_iter.next().unwrap(),
-                line_iter.next().unwrap(),
-                line_iter.next().unwrap(),
-            );
-            mappings
-                .entry(current_map.1)
-                .or_insert(vec![])
-                .push(new_mapping);
-        };
-    });
-
-    seeds
-        .into_iter()
-        .flat_map(|seed| {
-            let mut category = "seed";
-            let mut new_seeds = vec![seed];
-            while category != "location" {
-                let next_category = maps.get(category).unwrap();
-                new_seeds = new_seeds
-                    .into_iter()
-                    .flat_map(|range| {
-                        apply_shifts(range, mappings.get(next_category).unwrap().as_slice())
-                    })
-                    .collect();
-                // dbg!(new_seeds.clone());
-                category = next_category;
-            }
-            new_seeds
-        })
-        .map(|(start, _)| start)
-        .min()
+    let mut seeds: Vec<(u64, u64)> = lines
+        .next()
         .unwrap()
-}
-
-// 70224450
-fn apply_shifts(range: (u64, u64), shifts: &[(u64, u64, u64)]) -> Vec<(u64, u64)> {
-    if shifts.len() == 0 {
-        return vec![range];
-    }
-    // dbg!(range);
-
-    let (destination_start, source_start, map_range) = shifts[0];
-
-    let source_end = source_start + map_range;
-    let destination_end = destination_start + map_range;
-    // dbg!((source_start, source_end));
-    // dbg!((destination_start, destination_end));
-
-    // Range        |------|e
-    // Source     |----------|e
-    if range.0 >= source_start && range.1 <= source_end {
-        apply_shifts(
-            (
-                range.0 + destination_start - source_start,
-                range.1 + destination_start - source_start,
-            ),
-            &shifts[1..],
-        )
-    // Range        |------|e
-    // Source        |----|e
-    } else if range.0 < source_start && range.1 > source_end {
-        let mut result = vec![(destination_start, destination_end)];
-        result.extend(apply_shifts((range.0, source_start), &shifts[1..]));
-        result.extend(apply_shifts((source_end, range.1), &shifts[1..]));
-        result
-    // Range        |------|e
-    // Source         |-------|e
-    } else if range.0 < source_start && range.1 <= source_end && range.1 > source_start {
-        let mut result = vec![(
-            source_start + destination_start - source_start,
-            range.1 + destination_start - source_start,
-        )];
-        result.extend(apply_shifts((range.0, source_start), &shifts[1..]));
-        result
-    // Range        |------|e
-    // Source     |-----|e
-    } else if range.0 >= source_start && range.1 > source_end && range.0 < source_end {
-        let mut result = vec![(
-            range.0 + destination_start - source_start,
-            destination_start + map_range,
-        )];
-        result.extend(apply_shifts((source_end, range.1), &shifts[1..]));
-        result
-    // Range                   |------|e
-    // Source     |----------|e
-    // OR
-    // Range        |------|e
-    // Source                  |----------|e
-    } else if range.0 >= source_end || range.1 <= source_start {
-        apply_shifts(range, &shifts[1..])
-    // all other cases should handle all possibilities
-    } else {
-        panic!("How did we get here?")
-    }
-}
-
-fn part2_stupid(input: &str) -> u64 {
-    let mut lines = input.lines();
-    let seeds: Vec<u64> = lines.next().unwrap()[6..]
         .split_whitespace()
-        .map(|x| x.parse().unwrap())
+        .filter_map(|line| line.parse().ok())
         .collect::<Vec<u64>>()
         .chunks(2)
-        .flat_map(|range| (range[0]..range[0] + range[1]))
+        .map(|range| (range[0], range[1]))
+        // .take(1)
         .collect();
 
-    let mut maps: HashMap<&str, &str> = HashMap::new();
-    let mut mappings: HashMap<&str, Vec<(u64, u64, u64)>> = HashMap::new();
-    let mut current_map: (&str, &str) = ("", "");
+    dbg!(seeds.clone());
+    let mut shifted_seeds: Vec<(u64, u64)> = vec![];
     lines.for_each(|line| {
         if line.contains("map") {
-            let mut new_map = line.split_once(' ').unwrap().0.split('-');
-            current_map.1 = new_map.next().unwrap();
-            current_map.0 = new_map.last().unwrap();
-            maps.insert(current_map.0, current_map.1);
-        };
+            seeds.extend(&shifted_seeds);
+            shifted_seeds = vec![];
+        }
+
         if line.contains(|x: char| x.is_digit(10)) {
-            let mut line_iter = line.split_whitespace().map(|x| x.parse().unwrap());
-            let new_mapping = (
-                line_iter.next().unwrap(),
-                line_iter.next().unwrap(),
-                line_iter.next().unwrap(),
-            );
-            mappings
-                .entry(current_map.1)
-                .or_insert(vec![])
-                .push(new_mapping);
-        };
-    });
+            let shift: Vec<u64> = line
+                .split_whitespace()
+                .filter_map(|line| line.parse().ok())
+                .collect();
 
-    let mut location = 100000;
-    loop {
-        let mut seed = location;
-        let mut category = "location";
-        while category != "seed" {
-            let next_category = maps.get(category).unwrap();
-            // dbg!(next_category);
-            for (destination_start, source_start, range) in mappings.get(next_category).unwrap() {
-                // dbg!((destination_start, source_start, range));
-                // dbg!(seed);
-                if seed >= *destination_start && seed < *destination_start + *range {
-                    seed = seed + *source_start - *destination_start;
-                    break;
+            let d0 = shift[0];
+            let s0 = shift[1];
+            let s1 = shift[2];
+
+            // dbg!(shift);
+
+            let mut new_seeds = vec![];
+
+            seeds.iter().for_each(|(r0, r1)| {
+                if *r0 >= s0 && *r0 + *r1 <= s0 + s1 {
+                    shifted_seeds.push((*r0 - s0 + d0, *r1));
+                } else if *r0 < s0 && r0 + r1 > s0 + s1 {
+                    new_seeds.push((*r0, s0 - *r0));
+                    new_seeds.push((s0 + s1, *r0 + *r1 - (s0 + s1)));
+                    shifted_seeds.push((d0, s1))
+                } else if *r0 + *r1 > s0 && *r0 + *r1 <= s0 + s1 && *r0 < s0 {
+                    new_seeds.push((*r0, s0 - *r0));
+                    shifted_seeds.push((d0, *r0 + *r1 - s0));
+                } else if *r0 < s0 + s1 && *r0 >= s0 && *r0 + *r1 > s0 + s1 {
+                    new_seeds.push((s0 + s1, *r0 + *r1 - (s0 + s1)));
+                    shifted_seeds.push((*r0 - s0 + d0, s0 + s1 - *r0));
+                } else {
+                    new_seeds.push((*r0, *r1));
                 }
-            }
-            category = next_category;
+            });
+            // dbg!(new_seeds.clone());
+            // dbg!(shifted_seeds.clone());
+            seeds = new_seeds;
         }
-        // dbg!(seed);
-        // dbg!(seeds.clone());
-        // dbg!(location);
-
-        if seeds.contains(&seed) {
-            break location;
-        }
-        location += 1;
-    }
+    });
+    seeds.extend(&shifted_seeds);
+    seeds.into_iter().map(|(x, _)| x).min().unwrap()
 }
