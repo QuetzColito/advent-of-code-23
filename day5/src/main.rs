@@ -84,10 +84,8 @@ fn part2(input: &str) -> u64 {
         .collect::<Vec<u64>>()
         .chunks(2)
         .map(|range| (range[0], range[1]))
-        // .take(1)
         .collect();
 
-    dbg!(seeds.clone());
     let mut shifted_seeds: Vec<(u64, u64)> = vec![];
     lines.for_each(|line| {
         if line.contains("map") {
