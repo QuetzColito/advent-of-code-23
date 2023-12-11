@@ -68,15 +68,17 @@ fn udiff(a: usize, b: usize) -> usize {
 }
 
 fn part2(input: &str) -> u64 {
+    let mut offsets_y = vec![0; input.lines().collect::<Vec<_>>().len()];
     let grid = input
         .lines()
-        .flat_map(|line| {
-            let line_vec = line.chars().collect::<Vec<char>>();
-            if line.contains('#') {
-                vec![line_vec]
-            } else {
-                vec![line_vec; 1000000]
-            }
+        .enumerate()
+        .map(|(y, line)| {
+            if !line.contains('#') {
+                for i in y..offsets_y.len() {
+                    offsets_y[i] += 999999;
+                }
+            };
+            line.chars().collect::<Vec<char>>()
         })
         .collect::<Vec<Vec<char>>>();
 
@@ -86,7 +88,7 @@ fn part2(input: &str) -> u64 {
         let mut has_galaxy = false;
         for y in 0..grid.len() {
             if grid[y][x] == '#' {
-                galaxies.push((x + offset, y));
+                galaxies.push((x + offset, y + offsets_y[y]));
                 has_galaxy = true;
             };
         }
