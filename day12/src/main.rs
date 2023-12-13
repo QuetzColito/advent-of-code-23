@@ -26,7 +26,7 @@ struct State {
     signature: Vec<usize>,
 }
 
-fn find_possibilities(springs: Chars, known_patches: &Vec<usize>) -> u32 {
+fn find_possibilities(springs: Chars, known_patches: &Vec<usize>) -> u64 {
     let state_0 = State {
         last_char: '.',
         signature: vec![],
@@ -52,7 +52,7 @@ fn find_possibilities(springs: Chars, known_patches: &Vec<usize>) -> u32 {
         .iter()
         .filter_map(|(state, amount)| {
             if state.signature == *known_patches {
-                Some(*amount as u32)
+                Some(*amount as u64)
             } else {
                 None
             }
@@ -123,7 +123,7 @@ fn addp(result: &HashMap<State, usize>) -> HashMap<State, usize> {
 //         == *known_patches
 // }
 
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> u64 {
     input
         .lines()
         .map(|line| {
@@ -138,7 +138,7 @@ fn part1(input: &str) -> u32 {
         .sum()
 }
 
-fn part2(input: &str) -> u32 {
+fn part2(input: &str) -> u64 {
     input
         .lines()
         .map(|line| {
