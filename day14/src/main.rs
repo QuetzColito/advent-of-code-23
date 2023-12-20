@@ -176,7 +176,7 @@ fn part2(input: &str) -> u64 {
         print(&grid);
         if grids.contains(&grid) {
             let index = grids.iter().position(|x| *x == grid).unwrap();
-            let pattern_length = grids.len() - index + 1;
+            let pattern_length = grids.len() - index;
             let iterations_left = iteration_amount - iteration;
             dbg!(index, iteration, pattern_length, iterations_left);
             grids.push(grids[(iterations_left % pattern_length) + index].clone());
