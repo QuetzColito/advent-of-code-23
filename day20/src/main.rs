@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant};
 
 fn main() {
     let start_time = Instant::now();
@@ -20,9 +20,14 @@ fn main() {
     println!("{:?}", end_time - start_time);
 }
 
+enum Node {
+    FlipFlop,
+    Conjunction,
+}
+
 fn part1(input: &str) -> u64 {
     let mut broadcaster = vec![];
-    let mut flip_flops: Vec<(&str, Vec<&str>)> = vec![];
+    let mut flip_flops: HashMap<&str, (Vec<&str>, bool)> = HashMap::new();
     let mut conjunctions: Vec<(&str, Vec<&str>)> = vec![];
     for line in input.lines() {
         if line.starts_with("broadcaster") {
